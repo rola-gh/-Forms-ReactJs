@@ -1,0 +1,9 @@
+.left-side{
+    background-image: url("../../img/Group 1.png");
+    background-size: cover;
+}
+.sign-up{
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
+    grid-gap: 32px;
+}

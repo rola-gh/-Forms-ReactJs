@@ -1,9 +1,10 @@
 import React, { Component } from "react";
 import Grid from 'react-css-grid';
 import {Link ,withRouter } from "react-router-dom";
-import * as yup from 'yup'
-
+import axios  from 'axios'
+import loginSchema , {fieldSchema} from './loginValidate'
 import Input from '../../components/Input'
+import Button from '../../components/Button'
 import {ReactComponent as Vector } from '../../img/Vector.svg';
 import {ReactComponent as EyeSlash} from '../../img/eyeSlash.svg';
 import google from '../../img/google.png';
@@ -19,7 +20,8 @@ class Form extends Component{
         errors:{
             email:'',
             password:''
-        }
+        },
+        error:""
     };
 
     handleInputChange = e => {
@@ -27,42 +29,73 @@ class Form extends Component{
         const value =  target.value;
         const name = target.name;
 
-        this.setState({
-            [name]: value
-        });
+        this.setState({[name]: value},
+            ()=> {
+            fieldSchema(name)
+                .validate(value)
+                .then(()=>{
+                    this.setState(prevState =>{
+                        const {errors} = prevState;
+                        return {errors : {...errors , [name]:""}};
+                    });
+                })
+                .catch((err)=>{
 
+                this.setState(prevState =>{
+                    const {errors} = prevState;
+                    return {errors : {...errors , [name]:err.message}};
+                });
+            });
+            } //implement this logic after state finished
+            );
     };
+
+    validateForm = (data)=>{
+        loginSchema.validate(data , {abortEarly:false})
+            .then(()=>{
+                console.log('is valid');
+                this.setState({ errors:{} , error:''})
+
+            }).catch((err)=>{
+            const errors = {};
+            err.inner.forEach(({message, params })=>{
+                errors[params.path] = message;
+            });
+            this.setState({errors , error:'check the fields '})
+        })};
 
     handleSubmit = event => {
         event.preventDefault();
-        const {email , password } = this.state;
+        const {email , password , error } = this.state;
+        this.validateForm( {email , password });
 
-        //Validation
-        const loginSchema = yup.object().shape({
-            email: yup.string().email().required('Please Enter Your Email !'),
-            password:yup.string().required('Please Enter Your Password !'),
-        });
+        //axios  (send request to api )
+        if (!error){
+            //post data to api
+            axios.post("https://fake-api-ahmed.herokuapp.com/v1/auth/signup",
+                {email, password})
+                .then(res => {
+                    const user=res.data;
+                    console.log(user);
+            })
+                .catch(err => {
+                    let error = err.response.data.error;
+                    if (error.includes('duplicate')){
+                        error = "Email is exist"
+                    }
+                    this.setState({error})
 
-        loginSchema.validate( {email , password } , {abortEarly:false})
-            .then(()=>{
-                console.log('is valid')
-            }).catch((err)=>{
-                const errors = {};
-                err.inner.forEach(({message, params })=>{
-                    errors[params.path] = message;
-                })
-            this.setState({errors})
-        })
+            })
+        }
     };
 
-    passwordVisibility =()=>{
+    passwordVisibility =()=> {
         const {isPassShow} = this.state;
         this.setState({isPassShow : !isPassShow})
     };
 
-
     render() {
-        const {isPassShow} = this.state;
+        const {isPassShow , error} = this.state;
         return (
             <>
                 <h2 className={'text-center mainHeader'}>Join the game!</h2>
@@ -113,8 +146,14 @@ class Form extends Component{
 
                     <div className={'formGroup--custom'}>
                         <input type="submit" value="Login"/>
+                        {error&&<span>{error}</span>}
                     </div>
-                    <p className={'text-center last-p'}>Don't  have an account? <Link  to='/signup' >Sign Up For free</Link></p>
+                    {/*<Button className={'formGroup--custom'}*/}
+                    {/*        type="submit" value="Login"*/}
+                    {/*/>*/}
+                    <p className={'text-center last-p'}>Don't  have an account?
+                        <Link  to='/signup' >Sign Up For free</Link>
+                    </p>
                 </form>
             </>
         )}

@@ -1,11 +1,15 @@
 import React from 'react';
-import {Link} from "react-router-dom";
+import {Link ,withRouter} from "react-router-dom";
 
-export default function Back(props) {
+function Back(props) {
     const {} = props;
     return(
         <>
-            <Link to='/'> <span>&#60;</span>Back</Link>
+            {/*<Link to='/'> <span>&#60;</span>Back</Link>*/}
+            <div  onClick={() => props.history.goBack()}>
+                <span>&#60;</span>Back
+            </div>
         </>
     )
 }
+export default withRouter(Back);
